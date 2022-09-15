@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useTransition } from "react";
 import format from "date-fns/format";
 
 function App() {
   // We hold the user's selected number in state.
   const [selectedNum, setSelectedNum] = React.useState(100);
+  const [isPending, startTransition] = useTransition();
 
   // `time` is a state variable that changes once per second,
   // so that it's always in sync with the current time.
@@ -11,12 +12,17 @@ function App() {
 
   // We calculate all of the prime numbers between 0 and the
   // user's chosen number, `selectedNum`:
-  const allPrimes = [];
-  for (let counter = 2; counter < selectedNum; counter++) {
-    if (isPrime(counter)) {
-      allPrimes.push(counter);
+  const allPrimes = React.useMemo(() => {
+    const result = [];
+
+    for (let counter = 2; counter < selectedNum; counter++) {
+      if (isPrime(counter)) {
+        result.push(counter);
+      }
     }
-  }
+
+    return result;
+  }, [selectedNum]);
 
   return (
     <>
@@ -29,15 +35,27 @@ function App() {
           onChange={(event) => {
             // To prevent computers from exploding,
             // we'll max out at 100k
-            let num = Math.min(2_000_000, Number(event.target.value));
 
-            setSelectedNum(num);
+            startTransition(() => {
+              let num = Math.min(3_000_000, Number(event.target.value));
+
+
+              if(num != selectedNum){
+                setSelectedNum(num);
+              }
+
+              
+            });
           }}
         />
       </form>
       <p>
         There are {allPrimes.length} prime(s) between 1 and {selectedNum}:{" "}
-        <span className="prime-list">{allPrimes.join(", ")}</span>
+        {isPending ? (
+          <p style={{ color: "white" }}>Carregando...</p>
+        ) : (
+          <span className="prime-list">{allPrimes.join(", ")}</span>
+        )}
       </p>
     </>
   );
